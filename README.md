@@ -4,7 +4,7 @@
 
 ## Group Number (only for group work)
 
-## N/A
+N/A
 
 ## Description
 
@@ -19,7 +19,7 @@ The game starts on its own and the palyer can move the red circle using the arro
 
 # Assets
 
-## N/A
+N/A
 
 ## References
 
