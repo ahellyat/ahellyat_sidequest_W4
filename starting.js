@@ -7,23 +7,16 @@ function setup() {
   console.log("Grid created:", grid);
 
   // Initialize arrow key controls
-  // Pass a callback so we can check for a win after movement and
-  // a movementAllowedCallback to block movement when `gameWon` is true
-  initializeArrowKeyControls(
-    grid,
-    () => {
-      checkWin();
-    },
-    () => !gameWon,
-  );
+  // Pass a callback so we can check for a win after movement
+  initializeArrowKeyControls(grid, () => {
+    checkWin();
+  });
 }
 
 function draw() {
   background(220);
   drawLevel(grid);
   drawPlayerCircle();
-  // Show on-screen controls when the game is active
-  showControlsText(!gameWon, width);
   if (gameWon) {
     showWinScreen();
   }
