@@ -47,35 +47,31 @@ function generateArray(rows = 10, cols = 10) {
   return grid;
 }
 
-// BFS pathfinding to create guaranteed path from start to end
+// Randomized DFS pathfinding with BFS fallback to ensure varied paths
 function findPath(arr, startRow, startCol, endRow, endCol) {
   let rows = arr.length;
   let cols = arr[0].length;
 
-  let queue = [[startRow, startCol]];
-  let visited = {};
-  let parent = {};
+  const key = (r, c) => `${r},${c}`;
 
-  let key = (r, c) => `${r},${c}`;
-  visited[key(startRow, startCol)] = true;
-
-  while (queue.length > 0) {
-    let [r, c] = queue.shift();
-
-    // Found the end position
-    if (r === endRow && c === endCol) {
-      let path = [];
-      let curr = [endRow, endCol];
-
-      // Reconstruct path
-      while (curr) {
-        path.unshift(curr);
-        curr = parent[key(curr[0], curr[1])];
-      }
-      return path;
+  // Shuffle helper
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
     }
+  }
 
-    // Check all 4 cardinal directions
+  // Randomized DFS (iterative) to try producing a random simple path
+  let stack = [[startRow, startCol]];
+  let parent = {};
+  let visited = new Set([key(startRow, startCol)]);
+
+  while (stack.length > 0) {
+    let [r, c] = stack.pop();
+
+    if (r === endRow && c === endCol) break;
+
     let neighbors = [
       [r - 1, c], // up
       [r + 1, c], // down
@@ -83,20 +79,75 @@ function findPath(arr, startRow, startCol, endRow, endCol) {
       [r, c + 1], // right
     ];
 
-    for (let [nR, nC] of neighbors) {
-      // Stay within interior bounds (not on border)
-      if (nR < 1 || nR >= rows - 1 || nC < 1 || nC >= cols - 1) continue;
+    shuffle(neighbors);
 
+    for (let [nR, nC] of neighbors) {
+      if (nR < 1 || nR >= rows - 1 || nC < 1 || nC >= cols - 1) continue;
       let nKey = key(nR, nC);
-      if (!visited[nKey]) {
-        visited[nKey] = true;
-        parent[nKey] = [r, c];
+      if (visited.has(nKey)) continue;
+      visited.add(nKey);
+      parent[nKey] = [r, c];
+      stack.push([nR, nC]);
+    }
+  }
+
+  // If randomized DFS found a path, reconstruct it
+  if (
+    parent[key(endRow, endCol)] ||
+    (startRow === endRow && startCol === endCol)
+  ) {
+    let path = [];
+    let curr = [endRow, endCol];
+    while (curr) {
+      path.unshift(curr);
+      const p = parent[key(curr[0], curr[1])];
+      if (!p) break;
+      curr = p;
+    }
+    // Ensure path starts at start
+    if (path.length > 0 && path[0][0] === startRow && path[0][1] === startCol)
+      return path;
+  }
+
+  // Fallback to BFS (guaranteed shortest path) if DFS fails
+  let queue = [[startRow, startCol]];
+  let bVisited = {};
+  let bParent = {};
+  bVisited[key(startRow, startCol)] = true;
+
+  while (queue.length > 0) {
+    let [r, c] = queue.shift();
+    if (r === endRow && c === endCol) {
+      let path = [];
+      let curr = [endRow, endCol];
+      while (curr) {
+        path.unshift(curr);
+        curr = bParent[key(curr[0], curr[1])];
+      }
+      return path;
+    }
+
+    let neighbors = [
+      [r - 1, c],
+      [r + 1, c],
+      [r, c - 1],
+      [r, c + 1],
+    ];
+
+    shuffle(neighbors);
+
+    for (let [nR, nC] of neighbors) {
+      if (nR < 1 || nR >= rows - 1 || nC < 1 || nC >= cols - 1) continue;
+      let nKey = key(nR, nC);
+      if (!bVisited[nKey]) {
+        bVisited[nKey] = true;
+        bParent[nKey] = [r, c];
         queue.push([nR, nC]);
       }
     }
   }
 
-  // Fallback path
+  // Last resort: direct connection
   return [
     [startRow, startCol],
     [endRow, endCol],
